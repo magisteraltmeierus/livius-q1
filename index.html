@@ -1,0 +1,453 @@
+
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Livius – Selbsttest Q1</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f6fa;color:#1e293b;margin:0}
+main{max-width:850px;margin:35px auto;padding:0 18px 60px}
+header,.question,.results{background:white;border:1px solid #dce2eb;border-radius:14px;padding:22px;margin-bottom:16px}
+h1{margin:0 0 10px;font-size:1.8rem}
+h2{font-size:1.05rem;line-height:1.5}
+.muted{color:#64748b}
+.topic{font-size:.78rem;font-weight:700;letter-spacing:.05em;color:#315f99;text-transform:uppercase}
+.option{display:block;padding:12px 14px;margin:9px 0;border:1px solid #cbd5e1;border-radius:9px;cursor:pointer}
+.option:hover{background:#f1f5f9}
+.option input{margin-right:10px}
+.correct{border-color:#18834a;background:#e9f8ef}
+.wrong{border-color:#bd3e39;background:#fff0ef}
+.feedback{margin-top:12px;padding:12px;background:#f1f5f9;border-radius:8px}
+button{border:0;border-radius:9px;background:#245e9a;color:white;font-size:1rem;padding:13px 22px;cursor:pointer}
+button:hover{background:#174c80}
+button.secondary{background:#475569}
+button:disabled{opacity:.45;cursor:not-allowed}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:20px 0}
+.hidden{display:none}
+.score{font-size:1.7rem;font-weight:750}
+.small{font-size:.88rem}
+progress{width:100%;height:12px;accent-color:#245e9a}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="topic">Latein Q1 · Klausurvorbereitung</div>
+<h1>Livius – ab urbe condita</h1>
+<p>25 Fragen zu Cincinnatus, Stadtgründung, Romulus, Sendungsgedanke, praefatio und livianischer Geschichtsschreibung.</p>
+<p class="muted">Jeweils eine Antwort ist richtig. Nach dem Auswerten erhältst du Erklärungen und kannst den Test beliebig oft wiederholen. Es werden keine Ergebnisse an einen Server übertragen.</p>
+<div class="toolbar">
+<button id="start">Test starten</button>
+<label><input id="shuffle" type="checkbox" checked> Fragen und Antworten mischen</label>
+</div>
+</header>
+<div id="quiz" class="hidden">
+<p id="progressText" class="muted"></p>
+<progress id="progress" max="25" value="0"></progress>
+<div id="questions"></div>
+<div class="toolbar">
+<button id="grade">Antworten auswerten</button>
+<button class="secondary" id="reset">Neuer Versuch</button>
+</div>
+</div>
+<div id="result" class="results hidden" aria-live="polite"></div>
+</main>
+<script>
+const base=[
+{
+"topic":"Cincinnatus",
+"q":"Welche Funktion erfüllt die Cincinnatus-Episode im Rahmen der livianischen Geschichtsschreibung?",
+"options":[
+"Sie führt ein positives exemplum vor, das die Orientierung am Gemeinwohl veranschaulicht.",
+"Sie zeigt, dass militärische Erfolge vor allem aus der außerordentlichen Vollmacht einzelner Männer erwachsen.",
+"Sie erklärt Roms späteren Aufstieg durch die institutionelle Überlegenheit der Diktatur."
+],
+"answer":0,
+"why":"Cincinnatus kann als exemplum virtutis gelesen werden: Entscheidend ist die Orientierung am Gemeinwohl."
+},
+{
+"topic":"Cincinnatus",
+"q":"Welche Haltung passt besonders zu Cincinnatus als römischem Vorbild?",
+"options":[
+"Er übernimmt eine außerordentliche Aufgabe und gibt die damit verbundene Macht nach ihrer Erfüllung wieder ab.",
+"Er setzt seine militärische Überlegenheit ein, um sich dauerhaft politischen Einfluss zu sichern.",
+"Er verzichtet grundsätzlich auf politische Verantwortung, weil das private Leben Vorrang besitzt."
+],
+"answer":0,
+"why":"Das exemplum betont die Pflichterfüllung und den begrenzten, gemeinwohlorientierten Umgang mit Macht."
+},
+{
+"topic":"Cincinnatus",
+"q":"Welcher Wertbegriff bezeichnet besonders das pflichtgemäße Verhalten gegenüber Göttern, Vaterland und Familie?",
+"options":["pietas","fides","virtus"],
+"answer":0,
+"why":"Pietas meint die ethisch begründete Verpflichtung gegenüber Göttern, Vaterland und Angehörigen."
+},
+{
+"topic":"Cincinnatus",
+"q":"Warum ist eine idealisierte Vorbildfigur für Livius besonders nützlich?",
+"options":[
+"Weil die Leser an individuellen Entscheidungen erkennen können, welche mores und artes für das Gemeinwesen vorbildlich sind.",
+"Weil außergewöhnliche Einzelpersonen die politischen und gesellschaftlichen Ursachen historischer Entwicklungen vollständig ersetzen.",
+"Weil das vorbildliche Handeln einzelner Figuren eine eindeutige Rekonstruktion historischer Tatsachen gewährleistet."
+],
+"answer":0,
+"why":"Dies ist der Kern der moralisierenden exempla-Technik."
+},
+{
+"topic":"Stadtgründung",
+"q":"Was kennzeichnet eine aitiologische Deutung der römischen Frühgeschichte?",
+"options":[
+"Sie erklärt und legitimiert gegenwärtige Verhältnisse durch eine Erzählung über ihre Ursprünge.",
+"Sie stellt frühere Ereignisse als moralische Vorbilder dar, an denen sich die Gegenwart orientieren soll.",
+"Sie ordnet vergangene Ereignisse nach ihrer zeitlichen Abfolge, um historische Entwicklungen nachvollziehbar zu machen."
+],
+"answer":0,
+"why":"Aitiologische Erzählungen begründen und erklären gegenwärtige Zustände aus der Vergangenheit."
+},
+{
+"topic":"Stadtgründung",
+"q":"Welche Funktion kann die göttliche Abstammung des Romulus in der Darstellung der römischen Ursprünge haben?",
+"options":[
+"Sie wertet die Herkunft des Gründers auf und kann dadurch den besonderen Rang Roms legitimieren.",
+"Sie stellt vor allem Romulus' persönliche Tugendhaftigkeit als ausreichende Grundlage seiner späteren Vergöttlichung heraus.",
+"Sie dient in erster Linie dazu, den gewaltsamen Konflikt zwischen Romulus und Remus als göttlich angeordnet zu erklären."
+],
+"answer":0,
+"why":"Die Abstammung von Mars wertet den Gründer und damit die Ursprünge Roms auf."
+},
+{
+"topic":"Stadtgründung",
+"q":"Welche Aussage zum Brudermord in der Gründungserzählung ist am besten begründet?",
+"options":[
+"Er zeigt, dass die idealisierte Frühzeit Roms auch von Gewalt und moralischen Spannungen geprägt ist.",
+"Er stellt den Brudermord als notwendige Bewährung der pietas des Romulus dar.",
+"Er lässt die göttliche Abstammung des Romulus als Erklärung der römischen Weltherrschaft vollständig hinfällig werden."
+],
+"answer":0,
+"why":"Die Gründungsgeschichte enthält neben der Überhöhung des Ursprungs auch problematische Gewalt."
+},
+{
+"topic":"Apotheose",
+"q":"Was bedeutet „Apotheose“?",
+"options":[
+"Die Vergöttlichung eines Menschen.",
+"Das sichtbare Erscheinen einer Gottheit vor Menschen.",
+"Die Anerkennung einer göttlichen Abstammung."
+],
+"answer":0,
+"why":"Apotheose bezeichnet Vergöttlichung; Theophanie dagegen eine göttliche Erscheinung."
+},
+{
+"topic":"Apotheose",
+"q":"Welche Aussage trifft den Unterschied zwischen Apotheose und Theophanie in der Romulus-Erzählung?",
+"options":[
+"Die Apotheose bezeichnet Romulus' Vergöttlichung, die Theophanie sein später berichtetes Erscheinen vor Proculus.",
+"Die Apotheose bezeichnet die göttliche Abstammung des Romulus, die Theophanie seine Vergöttlichung.",
+"Die Apotheose bezeichnet das Verschwinden des Romulus im Gewitter, die Theophanie die anschließende Verehrung durch das Volk."
+],
+"answer":0,
+"why":"Die beiden Vorgänge sind zu unterscheiden, hängen in der Erzählung aber zusammen."
+},
+{
+"topic":"Sendungsgedanke",
+"q":"Welche Formulierung bei Livius macht den göttlichen Willen als Grundlage des Herrschaftsanspruchs besonders deutlich?",
+"options":[
+"caelestes ita velle",
+"nullas opes humanas armis Romanis resistere posse",
+"Roma caput orbis terrarum sit"
+],
+"answer":0,
+"why":"Caelestes ita velle bedeutet: Die Himmlischen/Götter wollen es so."
+},
+{
+"topic":"Sendungsgedanke",
+"q":"Was ist der Kern des römischen Sendungsgedankens in den behandelten Texten?",
+"options":[
+"Die Vorstellung, dass den Römern die Herrschaft über andere Völker von den Göttern aufgetragen ist.",
+"Die Vorstellung, dass Roms militärische Überlegenheit allein seine Weltherrschaft legitimiert.",
+"Die Vorstellung, dass Rom aufgrund seiner alten Werte zur moralischen Erneuerung anderer Völker verpflichtet ist."
+],
+"answer":0,
+"why":"Der göttliche Auftrag begründet und legitimiert den Anspruch auf Weltherrschaft."
+},
+{
+"topic":"Sendungsgedanke",
+"q":"Welche Aufgabe benennt Vergil mit „parcere subiectis et debellare superbos“?",
+"options":[
+"Unterworfene schonen und diejenigen militärisch niederwerfen, die sich der römischen Herrschaft widersetzen.",
+"Allen Völkern Frieden gewähren, sofern sie die römischen Wertvorstellungen freiwillig übernehmen.",
+"Die Freiheit unterworfener Völker schützen und militärische Gewalt nur zur Verteidigung Roms einsetzen."
+],
+"answer":0,
+"why":"Vergil formuliert einen differenzierten, aber klar imperialen Herrschaftsauftrag."
+},
+{
+"topic":"Sendungsgedanke",
+"q":"Welche kritische Folgerung zum Sendungsgedanken ist am besten begründet?",
+"options":[
+"Ein als göttlich begründeter Herrschaftsanspruch kann Eroberung rechtfertigen und Kritik an ihr erschweren.",
+"Der Sendungsgedanke führt notwendig zu einer friedlichen Ordnung, weil die Herrschaft als göttlicher Auftrag gilt.",
+"Die religiöse Legitimation erklärt zwar Roms Selbstverständnis, hat aber keine Auswirkungen auf die Bewertung militärischer Gewalt."
+],
+"answer":0,
+"why":"Eine göttliche Legitimation kann identitätsstiftend wirken, aber auch Gewalt und Herrschaftsansprüche absichern."
+},
+{
+"topic":"Praefatio",
+"q":"Worauf soll der Leser nach Livius besonders achten: „quae vita, qui mores ... quibusque artibus“?",
+"options":[
+"Auf Lebensweise, Wertvorstellungen und Eigenschaften der Menschen, durch die Rom groß geworden ist.",
+"Auf die militärischen Erfolge einzelner Feldherren, unabhängig von deren Lebensführung und Wertvorstellungen.",
+"Auf die göttliche Abstammung der führenden Männer als entscheidende Ursache römischer Größe."
+],
+"answer":0,
+"why":"Livius richtet den Blick ausdrücklich auf mores, artes und die handelnden Personen."
+},
+{
+"topic":"Praefatio",
+"q":"Was beschreibt ein „deszendentes Geschichtsbild“?",
+"options":[
+"Die Vorstellung, dass die römischen Sitten von einer idealisierten Frühzeit aus zunehmend verfallen.",
+"Die Vorstellung, dass Roms politischer Aufstieg von einer stetigen moralischen Verbesserung begleitet wird.",
+"Die Vorstellung, dass Rom trotz wechselnder Herrschaftsformen seine moralischen Maßstäbe unverändert bewahrt."
+],
+"answer":0,
+"why":"Deszendent bedeutet hier: moralischer Abstieg bzw. Verfall."
+},
+{
+"topic":"Praefatio",
+"q":"Welche Aussage bringt „nec vitia nostra nec remedia pati possumus“ am treffendsten zum Ausdruck?",
+"options":[
+"Die Gegenwart ist so krisenhaft, dass die Römer weder ihre Missstände noch Mittel zu deren Behebung ertragen.",
+"Die Gegenwart hat ihre Missstände erkannt, lehnt aber die Rückkehr zur republikanischen Verfassung ab.",
+"Die Römer leiden zwar unter moralischen Missständen, sind jedoch bereit, schmerzhafte Gegenmaßnahmen anzunehmen."
+],
+"answer":0,
+"why":"Livius formuliert eine zugespitzte Diagnose seiner Gegenwart."
+},
+{
+"topic":"Praefatio",
+"q":"Welche Entwicklung beschreibt „quanto rerum minus, tanto minus cupiditatis erat“?",
+"options":[
+"Je weniger Besitz vorhanden war, desto geringer war auch das Verlangen danach.",
+"Je weniger Besitz vorhanden war, desto größer war das Bedürfnis nach Reichtum.",
+"Je größer der Besitz wurde, desto geringer wurde das Verlangen nach weiteren Gütern."
+],
+"answer":0,
+"why":"Livius verknüpft die frühere materielle Genügsamkeit mit geringerer Begierde."
+},
+{
+"topic":"Praefatio",
+"q":"Welche Begriffe stehen in der praefatio besonders für den moralischen Verfall?",
+"options":[
+"avaritia und luxuria",
+"paupertas und parsimonia",
+"virtus und pietas"
+],
+"answer":0,
+"why":"Habgier und Luxus erscheinen als negative Gegenbilder zur früheren Sparsamkeit."
+},
+{
+"topic":"Praefatio",
+"q":"Warum ist die augusteische Epoche für die Deutung der praefatio relevant?",
+"options":[
+"Bürgerkriegserfahrungen und augusteischer Erneuerungsanspruch bilden einen wichtigen Kontext für Livius' moralische Rückschau.",
+"Die praefatio ist vor allem als unmittelbare Rechtfertigung der institutionellen Alleinherrschaft des Augustus zu lesen.",
+"Livius' Rückblick auf die Frühzeit ist ausschließlich aus den Ereignissen der Königszeit zu erklären; seine Gegenwart bleibt ohne Bedeutung."
+],
+"answer":0,
+"why":"Der Kontext von Bürgerkriegserfahrung und Erneuerungsanspruch hilft, Livius’ Wertediskurs einzuordnen."
+},
+{
+"topic":"Praefatio",
+"q":"Welche Aussage zur Haltung des Livius gegenüber Augustus ist methodisch am angemessensten?",
+"options":[
+"Das Werk ist im augusteischen Kontext zu interpretieren, ohne seine Aussagen pauschal mit der Politik des Augustus gleichzusetzen.",
+"Die Nähe der Lebensdaten von Livius und Augustus beweist, dass Livius' historische Wertungen vollständig von Augustus vorgegeben waren.",
+"Livius' Bewunderung republikanischer Vorbilder schließt jeden inhaltlichen Bezug zur augusteischen Erneuerungspolitik aus."
+],
+"answer":0,
+"why":"Historisch-pragmatische Interpretation berücksichtigt den Kontext, vermeidet aber vorschnelle Gleichsetzungen."
+},
+{
+"topic":"Stil und Transfer",
+"q":"Welche Funktion erfüllen die wörtlichen Reden bei Livius häufig?",
+"options":[
+"Sie steigern Anschaulichkeit und den Eindruck unmittelbarer Zeugenschaft, obwohl sie literarisch gestaltet sein können.",
+"Sie gewährleisten die wortgetreue Wiedergabe historischer Aussagen und damit die objektive Zuverlässigkeit des Berichts.",
+"Sie dienen hauptsächlich dazu, das Erzähltempo zu verlangsamen, ohne die Deutung der Ereignisse zu beeinflussen."
+],
+"answer":0,
+"why":"Die Reden können literarisch gestaltet sein und dennoch Authentizität suggerieren."
+},
+{
+"topic":"Stil und Transfer",
+"q":"Was ist ein historisches Präsens?",
+"options":[
+"Die Verwendung des Präsens zur lebendigen Darstellung vergangener Vorgänge.",
+"Die Verwendung des Präsens für Aussagen über dauerhaft gültige historische Gesetzmäßigkeiten.",
+"Die Verwendung des Präsens, um vom vergangenen Geschehen zur Gegenwart des Autors überzuleiten."
+],
+"answer":0,
+"why":"Das historische Präsens vergegenwärtigt vergangenes Geschehen."
+},
+{
+"topic":"Stil und Transfer",
+"q":"Was bedeutet die Form „invexere“ am Ende der praefatio?",
+"options":[
+"invexerunt",
+"invexerant",
+"inveherent"
+],
+"answer":0,
+"why":"Die Endung -ere kann in der 3. Person Plural Perfekt für -erunt stehen."
+},
+{
+"topic":"Stil und Transfer",
+"q":"Welche Verbindung zwischen Cincinnatus und der praefatio ist besonders überzeugend?",
+"options":[
+"Cincinnatus veranschaulicht an einer Person die mores und artes, deren Bedeutung Livius in der praefatio betont.",
+"Cincinnatus zeigt, dass die Größe Roms für Livius vor allem auf seiner göttlichen Herkunft beruht.",
+"Cincinnatus veranschaulicht vor allem den moralischen Verfall, den Livius als Kennzeichen der Frühzeit beschreibt."
+],
+"answer":0,
+"why":"Die Episode lässt sich als Konkretisierung der in der praefatio formulierten Aufmerksamkeit für Werte und Vorbilder verstehen."
+},
+{
+"topic":"Stil und Transfer",
+"q":"Welche Deutung verbindet Romulus’ Erscheinung und den Sendungsgedanken besonders schlüssig?",
+"options":[
+"Die vergöttlichte Gründerfigur übermittelt einen göttlichen Herrschaftsauftrag und legitimiert so Roms Weltherrschaft.",
+"Die Erscheinung des Romulus erklärt die militärische Überlegenheit Roms, ohne diese mit einem göttlichen Auftrag zu verbinden.",
+"Die Erscheinung bekräftigt vor allem die moralische Vorbildlichkeit des Romulus; der Herrschaftsanspruch bleibt dabei nachgeordnet."
+],
+"answer":0,
+"why":"Apotheose, Theophanie und göttlicher Herrschaftsauftrag greifen in der Darstellung ineinander."
+}
+];
+
+let questions=[];
+const $=id=>document.getElementById(id);
+
+function mix(a){
+  a=[...a];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function start(){
+  const random=$('shuffle').checked;
+  questions=(random?mix(base):[...base]).map(x=>{
+    const choices=x.options.map((t,i)=>({
+      text:t,
+      correct:i===x.answer
+    }));
+    return {...x,choices:random?mix(choices):choices};
+  });
+
+  $('questions').innerHTML='';
+
+  questions.forEach((q,i)=>{
+    const box=document.createElement('section');
+    box.className='question';
+
+    const tag=document.createElement('div');
+    tag.className='topic';
+    tag.textContent=`Frage ${i+1} · ${q.topic}`;
+
+    const h=document.createElement('h2');
+    h.textContent=q.q;
+    box.append(tag,h);
+
+    q.choices.forEach((c,j)=>{
+      const label=document.createElement('label');
+      label.className='option';
+
+      const input=document.createElement('input');
+      input.type='radio';
+      input.name='q'+i;
+      input.value=j;
+      input.addEventListener('change',update);
+
+      label.append(input,document.createTextNode(c.text));
+      box.append(label);
+    });
+
+    $('questions').append(box);
+  });
+
+  $('quiz').classList.remove('hidden');
+  $('result').classList.add('hidden');
+  $('grade').disabled=false;
+  update();
+  $('quiz').scrollIntoView({behavior:'smooth'});
+}
+
+function update(){
+  const done=questions.filter((q,i)=>
+    document.querySelector(`input[name=q${i}]:checked`)
+  ).length;
+
+  $('progress').value=done;
+  $('progressText').textContent=`${done} von 25 Fragen beantwortet`;
+}
+
+$('start').onclick=start;
+$('reset').onclick=start;
+
+$('grade').onclick=()=>{
+  let correct=0;
+
+  questions.forEach((q,i)=>{
+    const box=$('questions').children[i];
+    const selected=box.querySelector('input:checked');
+    const pick=selected?Number(selected.value):-1;
+
+    if(pick>=0&&q.choices[pick].correct)correct++;
+
+    box.querySelectorAll('label.option').forEach((label,j)=>{
+      const c=q.choices[j];
+
+      if(c.correct)label.classList.add('correct');
+      else if(j===pick)label.classList.add('wrong');
+
+      label.querySelector('input').disabled=true;
+    });
+
+    const feedback=document.createElement('div');
+    feedback.className='feedback';
+    feedback.textContent=
+      (pick===-1?'Nicht beantwortet. ':
+      q.choices[pick].correct?'Richtig! ':'Nicht richtig. ')+q.why;
+
+    box.append(feedback);
+  });
+
+  $('grade').disabled=true;
+
+  const r=$('result');
+  r.classList.remove('hidden');
+  r.innerHTML='';
+
+  const heading=document.createElement('div');
+  heading.className='score';
+  heading.textContent=`${correct} von 25 richtig (${Math.round(correct/25*100)} %)`;
+
+  const p=document.createElement('p');
+  p.textContent='Prüfe die markierten Lösungen und die Erklärungen unter den Fragen. Du kannst den Test jederzeit erneut starten.';
+
+  const b=document.createElement('button');
+  b.textContent='Noch einmal üben';
+  b.onclick=start;
+
+  r.append(heading,p,b);
+  r.scrollIntoView({behavior:'smooth'});
+};
+</script>
+</body>
+</html>
